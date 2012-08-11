@@ -1,0 +1,9 @@
+[Plugin]
+Loader=python
+Module=lastfm_queue
+IAge=2
+Name=Last.fm Dynamic Tracks
+Description=Retrieves similar tracks from Last.fm and places then in the Play Queue when active
+Authors=Alexandre Rosenfeld <airmind@gmail.com>
+Copyright=Copyright © 2007 Alexandre Rosenfeld
+Website=http://www.rhythmbox.org/

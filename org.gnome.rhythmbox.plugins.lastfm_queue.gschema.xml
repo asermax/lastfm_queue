@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+    <schema path="/org/gnome/rhythmbox/plugins/lastfm_queue/" id="org.gnome.rhythmbox.plugins.lastfm_queue">
+        <key type="b" name="active">
+            <default>true</default>
+            <summary>If the plugin should be active at start up.</summary>
+            <description>Defines if the plugin should be active at start up, filling the queue with recommendations.</description>
+        </key>
+    </schema>
+</schemalist>
