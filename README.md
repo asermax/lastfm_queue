@@ -1,10 +1,12 @@
 lastfm_queue - Rhythmbox's dynamic queue based on LastFM recommendations.
 ========================================================================
 
-This plugin is a port from Alexandre Rosenfeld's plugin, to support the Rhythmbox 2.x new plugin architecture.
+This plugin is a port from Alexandre Rosenfeld's plugin, to support the new Rhythmbox 2.x plugin architecture.
 
-This plugin will add an option to dinamically build up your playing queue, based on the songs you play. 
-Each time you play a new song, it'll look for recommendations from LastFM and randomly choose from the songs you have on your library and match the recommendations, to add them to the current playing queue. All you gotta do is activate it from the toolbar.
+This plugin will give you the posibility of dinamically build up your playing queue, based on the songs being played. 
+Each time Rhythmbox plays a new song, the plugin will look for recommendations from LastFM, randomly choose from the songs you have on your library (that match the given recommendations) and add them to the current playing queue. 
+
+All you gotta do is activate it from the toolbar :]
 
 Installation
 -----------
@@ -22,4 +24,4 @@ Contact
 You can let me know of any bugs or new features you want to see implemented through this repository's issue tracker.
 Also, feel free to contact me at my personal email account: asermax at gmail dot com.
 
-And if you feel really friendly, at me on LastFM! My user over there is also asermax :]
+And if you feel really friendly, add me on LastFM! My user over there is also asermax :]
