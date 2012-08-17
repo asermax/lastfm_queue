@@ -140,10 +140,10 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
 			pass
 		self.past_entries.append((artist, title))
 		loader = rb.Loader()
-		loader.get_url( "http://ws.audioscrobbler.com/1.0/track/%s/%s/similar.xml" %
-		                (urllib.quote(artist.encode('utf-8')), 
-		                urllib.quote(title.encode('utf-8'))), 
-		                self.load_list)
+		url = "http://ws.audioscrobbler.com/2.0/?method=track.getsimilar&artist=%s&track=%s&api_key=4353df7956417de92999306424bc9395" % \
+		       	(urllib.quote(artist.encode('utf-8')), urllib.quote(title.encode('utf-8')))		                              
+		           
+		loader.get_url( url, self.load_list)
 
 	def load_list(self, data):
 		if not data:
@@ -154,8 +154,9 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
 		shuffle(tracks)
 		for track in tracks:
 			names = track.getElementsByTagName('name')
-			artist = names[0].firstChild.data.encode( 'utf-8' )
-			title = names[1].firstChild.data.encode( 'utf-8' )
+			title = names[0].firstChild.data.encode( 'utf-8' )
+			artist = names[1].firstChild.data.encode( 'utf-8' )
+			
 			if self.find_track(artist, title):
 				break
 
