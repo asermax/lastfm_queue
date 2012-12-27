@@ -79,7 +79,7 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
 		self.db = shell.get_property('db')
 		sp = shell.props.shell_player
 		self.pec_id = sp.connect ('playing-song-changed', self.playing_entry_changed)
-		self.pc_id = sp.connect ('playing-changed', self.playing_changed)
+		#self.pc_id = sp.connect ('playing-changed', self.playing_changed)
 		self.sc_id = sp.connect ('playing-source-changed', self.source_changed)
 		self.past_entries = []
 		self.current_entry = None
@@ -99,7 +99,7 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
 		sp = self.shell.props.shell_player
 		self.shell = None
 		sp.disconnect (self.pec_id)
-		sp.disconnect (self.pc_id)
+		#sp.disconnect (self.pc_id)
 		sp.disconnect (self.sc_id)
 
 	def toggle_dynamic(self, action, shell):
