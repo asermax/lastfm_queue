@@ -17,6 +17,8 @@ Use
 ---
 This plugins doesn't need further configuration after enabling it. Just activate it and enjoy.
 
+**Note:** this plugins makes queries against rhythmbox's database. In **32 bit systems** there's a know bug that doesn't allow plugins writen in python to do just that **without crashing.** 
+
 Contact
 ------
 You can let me know of any bugs or new features you want to see implemented through this repository's issue tracker.
