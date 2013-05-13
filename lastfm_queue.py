@@ -55,25 +55,21 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
 		
 	def do_activate(self):
 		shell = self.object
-		
-		
-		data = dict()
+					
 		manager = shell.props.ui_manager
 
-		data['action_group'] = Gtk.ActionGroup('LastFmDynamicActions')
+		self.action_group = Gtk.ActionGroup('LastFmDynamicActions')
 
 		action = Gtk.ToggleAction('DynamicToggle', _('_DynamicQ'),
 		                    _("Toggle Last.fm recommendations"),
 		                    Gtk.STOCK_EXECUTE)
 		action.connect('activate', self.toggle_dynamic, shell)
-		data['action_group'].add_action(action)
+		self.action_group.add_action(action)
 		action.set_active(self.active)
 
-		manager.insert_action_group(data['action_group'], 0)
-		data['ui_id'] = manager.add_ui_from_string(ui_str)
+		manager.insert_action_group(self.action_group, 0)
+		self.ui_id = manager.add_ui_from_string(ui_str)
 		manager.ensure_update()
-
-		shell.set_data('LastFmDynamicPluginInfo', data)
 
 		self.shell = shell
 		self.db = shell.get_property('db')
@@ -85,16 +81,13 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
 		self.current_entry = None
 		self.orig_source = None
 		self.similar_data = None
-	def do_deactivate(self):
-		data = self.shell.get_data('LastFmDynamicPluginInfo')
-
-		manager = self.shell.props.ui_manager
-		manager.remove_ui(data['ui_id'])
-		manager.remove_action_group(data['action_group'])
-		manager.ensure_update()
-
-		self.shell.set_data('LastFmDynamicPluginInfo', None)
 		
+	def do_deactivate(self):
+		manager = self.shell.props.ui_manager
+		manager.remove_ui(self.ui_id)
+		manager.remove_action_group(self.action_group)
+		manager.ensure_update()
+				
 		self.db = None
 		sp = self.shell.props.shell_player
 		self.shell = None
