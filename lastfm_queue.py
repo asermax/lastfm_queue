@@ -17,11 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA.
 
-import string
-import sys
-import re
-import traceback
-from gi.repository import GObject, Gio, Gtk, Peas, RB, GLib
+from gi.repository import GObject, Gio, Peas, RB, GLib
 
 from lastfmqueue_rb3compat import ActionGroup
 #~ from lastfmqueue_rb3compat import Action
@@ -29,23 +25,24 @@ from lastfmqueue_rb3compat import ApplicationShell
 
 import rb
 import urllib
+import random
 from xml.dom import minidom
-from random import *
 
 import gettext
 gettext.install('rhythmbox', RB.locale_dir(), unicode=True)
 
 ui_str = \
-"""<ui>
+    """<ui>
     <menubar name="MenuBar">
         <menu name="ControlMenu" action="Control">
             <menuitem name="LastFM Queue" action="LastFMQueueAction"/>
         </menu>
     </menubar>
-</ui>"""
+    </ui>"""
 
 PATH = 'org.gnome.rhythmbox.plugins.lastfm_queue'
 ACTIVE_KEY = 'active'
+
 
 class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
     __gtype_name = 'LastFMQueue'
@@ -54,50 +51,37 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
     def __init__(self):
         GObject.Object.__init__(self)
         self.settings = Gio.Settings.new(PATH)
-        self.active = self.settings[ACTIVE_KEY]
 
     def do_activate(self):
         self.shell = self.object
 
         self.action_group = ActionGroup(self.shell, 'LastFMQueueActionGroup')
-        action = self.action_group.add_action(func=self.toggle_dynamic,
-             action_name='LastFMQueueAction', label='LastFM Queue',
-             action_type='app', action_state=ActionGroup.TOGGLE)
+        action = self.action_group.add_action(
+            func=self.toggle_dynamic,
+            action_name='LastFMQueueAction',
+            label='LastFM Queue',
+            action_type='app',
+            action_state=ActionGroup.TOGGLE)
+
+        self.active = False
+
+        if self.settings[ACTIVE_KEY]:
+            action.activate()
 
         self._appshell = ApplicationShell(self.shell)
         self._appshell.insert_action_group(self.action_group)
         self._appshell.add_app_menuitems(ui_str, 'LastFMQueueActionGroup')
 
-        self.active = False
-
         self.db = self.shell.get_property('db')
 
         sp = self.shell.props.shell_player
-        self.pec_id = sp.connect ('playing-song-changed', self.playing_entry_changed)
-        #self.pc_id = sp.connect ('playing-changed', self.playing_changed)
-        self.sc_id = sp.connect ('playing-source-changed', self.source_changed)
+        self.pec_id = sp.connect(
+            'playing-song-changed', self.playing_entry_changed)
+        self.sc_id = sp.connect('playing-source-changed', self.source_changed)
         self.past_entries = []
         self.current_entry = None
         self.orig_source = None
         self.similar_data = None
-
-    ## bind to signal, end of playlist
-    #~ self.shell_player = self.shell.props.shell_player
-    #~ self.player_connect_id = self.shell_player.connect('playing-changed', self.playing_changed)
-
-        #~ manager = shell.props.ui_manager
-        #~ self.action_group = Gtk.ActionGroup('LastFmDynamicActions')
-        #~ action = Gtk.ToggleAction('DynamicToggle', _('_DynamicQ'),
-                                                #~ _("Toggle Last.fm recommendations"),
-                            #~ Gtk.STOCK_EXECUTE)
-        #~ action.connect('activate', self.toggle_dynamic, shell)
-        #~ self.action_group.add_action(action)
-        #~ action.set_active(self.active)
-        #~ manager.insert_action_group(self.action_group, 0)
-        #~ self.ui_id = manager.add_ui_from_string(ui_str)
-        #~ manager.ensure_update()
-        #~ self.shell = shell
-
 
     def do_deactivate(self):
         self._appshell.cleanup()
@@ -110,9 +94,8 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
         self.db = None
         sp = self.shell.props.shell_player
         self.shell = None
-        sp.disconnect (self.pec_id)
-        #sp.disconnect (self.pc_id)
-        sp.disconnect (self.sc_id)
+        sp.disconnect(self.pec_id)
+        sp.disconnect(self.sc_id)
 
     def toggle_dynamic(self, *args):
         #~ self.active = action.get_active()
@@ -127,40 +110,44 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
     def source_changed(self, sp, source):
         if not source:
             return
-        #We don't want to forget our past songs if we change to the Queue
+        # We don't want to forget our past songs if we change to the Queue
         if source.get_name() == 'RBPlayQueueSource':
             return
-        #Or if we get back to our original source
+        # Or if we get back to our original source
         if source.get_name() == self.orig_source:
             return
-        orig_source = source.get_name()
-        #Forget past entries when changing sourcesS
+
+        self.orig_source = source.get_name()
+
+        # Forget past entries when changing sources
         self.past_entries = []
 
-    def playing_changed (self, sp, playing):
+    def playing_changed(self, sp, playing):
         if self.active:
-            self.set_entry(sp.get_playing_entry ())
+            self.set_entry(sp.get_playing_entry())
 
-    def playing_entry_changed (self, sp, entry):
+    def playing_entry_changed(self, sp, entry):
         if self.active:
             self.set_entry(entry)
 
-    def set_entry (self, entry):
+    def set_entry(self, entry):
         if entry == self.current_entry or not entry:
             return
         self.current_entry = entry
-        title = unicode( entry.get_string(RB.RhythmDBPropType.TITLE ), 'utf-8' )
-        artist = unicode( entry.get_string(RB.RhythmDBPropType.ARTIST ), 'utf-8' )
+        title = unicode(entry.get_string(RB.RhythmDBPropType.TITLE), 'utf-8')
+        artist = unicode(entry.get_string(RB.RhythmDBPropType.ARTIST), 'utf-8')
         try:
             self.past_entries.pop(self.past_entries.index((artist, title)))
         except ValueError:
             pass
         self.past_entries.append((artist, title))
         loader = rb.Loader()
-        url = "http://ws.audioscrobbler.com/2.0/?method=track.getsimilar&artist=%s&track=%s&api_key=4353df7956417de92999306424bc9395" % \
-                (urllib.quote(artist.encode('utf-8')), urllib.quote(title.encode('utf-8')))
+        url = 'http://ws.audioscrobbler.com/2.0/?method=track.getsimilar' \
+            '&artist=%s&track=%s&api_key=4353df7956417de92999306424bc9395' % \
+            (urllib.quote(artist.encode('utf-8')),
+            urllib.quote(title.encode('utf-8')))
 
-        loader.get_url( url, self.load_list)
+        loader.get_url(url, self.load_list)
 
     def load_list(self, data):
         if not data:
@@ -168,11 +155,12 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
         self.similar_data = data
         dom = minidom.parseString(data)
         tracks = dom.getElementsByTagName('track')
-        shuffle(tracks)
+        random.shuffle(tracks)
+
         for track in tracks:
             names = track.getElementsByTagName('name')
-            title = names[0].firstChild.data.encode( 'utf-8' )
-            artist = names[1].firstChild.data.encode( 'utf-8' )
+            title = names[0].firstChild.data.encode('utf-8')
+            artist = names[1].firstChild.data.encode('utf-8')
 
             if self.find_track(artist, title):
                 break
@@ -180,13 +168,18 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
     def find_track(self, artist, title):
         query_model = RB.RhythmDBQueryModel.new_empty(self.db)
         query = GLib.PtrArray()
-        self.db.query_append_params( query,
-                             RB.RhythmDBQueryType.EQUALS,
-                             RB.RhythmDBPropType.ARTIST, artist )
-        self.db.query_append_params( query,
-                              RB.RhythmDBQueryType.EQUALS,
-                              RB.RhythmDBPropType.TITLE, title)
+        self.db.query_append_params(
+            query,
+            RB.RhythmDBQueryType.EQUALS,
+            RB.RhythmDBPropType.ARTIST,
+            artist)
+        self.db.query_append_params(
+            query,
+            RB.RhythmDBQueryType.EQUALS,
+            RB.RhythmDBPropType.TITLE,
+            title)
         self.db.do_full_query_parsed(query_model, query)
+
         for row in query_model:
             if self.past_entries.count((artist, title)) > 0:
                 continue
