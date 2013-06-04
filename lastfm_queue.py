@@ -63,10 +63,8 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
             action_type='app',
             action_state=ActionGroup.TOGGLE)
 
-        self.active = False
-
-        if self.settings[ACTIVE_KEY]:
-            action.activate()
+        self.active = self.settings[ACTIVE_KEY]
+        action.set_active(self.settings[ACTIVE_KEY])
 
         self._appshell = ApplicationShell(self.shell)
         self._appshell.insert_action_group(self.action_group)

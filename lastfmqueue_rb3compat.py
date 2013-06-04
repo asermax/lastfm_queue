@@ -724,6 +724,18 @@ class Action(object):
             self.action.activate(None)
         else:
             self.action.activate()
+            
+    def set_active(self, value):
+        ''' 
+        activate or deactivate a stateful action
+        
+        :param value: `boolean` state value
+        '''
+        
+        if is_rb3(self.shell):
+            self.action.change_state(GLib.Variant('b', value))
+        else:
+            self.action.set_active(value)
 
     def associate_menuitem(self, menuitem):
         ''' 
