@@ -746,15 +746,13 @@ class Action(object):
         
         returns `boolean` state value
         '''
-        
-        returnval = None
-        
         if is_rb3(self.shell):
             returnval = self.action.get_state()
         else:
             returnval = self.action.get_active()
 
         return returnval
+
     def associate_menuitem(self, menuitem):
         ''' 
         links a menu with the action

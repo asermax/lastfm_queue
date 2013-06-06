@@ -56,17 +56,16 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
         self.shell = self.object
 
         self.action_group = ActionGroup(self.shell, 'LastFMQueueActionGroup')
-        action = self.action_group.add_action(
+        self.action = self.action_group.add_action(
             func=self.toggle_dynamic,
             action_name='LastFMQueueAction',
             label='LastFM Queue',
             action_type='app',
             action_state=ActionGroup.TOGGLE)
 
-        self.active = False
-        if self.settings[ACTIVE_KEY]:
-            action.set_active(self.settings[ACTIVE_KEY])
-        
+        # load saved state
+        self.action.set_active(self.settings[ACTIVE_KEY])
+
         self._appshell = ApplicationShell(self.shell)
         self._appshell.insert_action_group(self.action_group)
         self._appshell.add_app_menuitems(ui_str, 'LastFMQueueActionGroup')
@@ -85,11 +84,6 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
     def do_deactivate(self):
         self._appshell.cleanup()
 
-        #~ manager = self.shell.props.ui_manager
-        #~ manager.remove_ui(self.ui_id)
-        #~ manager.remove_action_group(self.action_group)
-        #~ manager.ensure_update()
-
         self.db = None
         sp = self.shell.props.shell_player
         self.shell = None
@@ -97,11 +91,7 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
         sp.disconnect(self.sc_id)
 
     def toggle_dynamic(self, *args):
-        #~ self.active = action.get_active()
-        if self.active:
-            self.active = False
-        else:
-            self.active = True
+        self.active = self.action.get_active()
 
         self.settings[ACTIVE_KEY] = self.active
         self.past_entries = []
