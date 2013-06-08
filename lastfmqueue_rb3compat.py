@@ -427,7 +427,8 @@ class ActionGroup(object):
             else:
                 action = Gio.SimpleAction.new(action_name, None)
             
-            action.connect('activate', func, args)
+            act = Action(self.shell, action)
+            #action.connect('activate', func, args)
 
             action_type = 'win'
             if 'action_type' in args:
@@ -453,15 +454,16 @@ class ActionGroup(object):
                 action = Gtk.Action(label=label,
                     name=action_name,
                    tooltip='', stock_id=Gtk.STOCK_CLEAR)
-
-            action.connect('activate', func, None, args)
-
+                   
+            #action.connect('activate', func, None, args)
             if accel:
                 self.actiongroup.add_action_with_accel(action, accel)
             else:
                 self.actiongroup.add_action(action)
             
         act = Action(self.shell, action)
+        act.connect('activate', func, args)
+
         act.label = label
         act.accel = accel
             
@@ -658,6 +660,7 @@ class Action(object):
     '''
     class that wraps around either a Gio.Action or a Gtk.Action
     '''
+    
     def __init__(self, shell, action):
         '''
         constructor.
@@ -670,7 +673,27 @@ class Action(object):
         
         self._label = ''
         self._accel = ''
+        self._current_state = False
+        self._do_update_state = True
+        
+    def connect(self, address, func, args):
+        self._connect_func = func
+        self._connect_args = args
+        
+        if address == 'activate':
+            func = self._activate
+            
+        if is_rb3(self.shell):
+            self.action.connect(address, func, args)
+        else:
+            self.action.connect(address, func, None, args)
 
+    def _activate(self, action, *args):
+        if self._do_update_state:
+            self._current_state = not self._current_state
+        
+        self._connect_func(self._connect_args)
+        
     @property
     def label(self):
         ''' 
@@ -736,7 +759,10 @@ class Action(object):
         
         if is_rb3(self.shell):
             self.action.change_state(GLib.Variant('b', value))
+            self._current_state = value
+            self._do_update_state = False
             self.activate()
+            self._do_update_state = True
         else:
             self.action.set_active(value)
             
@@ -746,22 +772,19 @@ class Action(object):
         
         returns `boolean` state value
         '''
-        
-        returnval = None
-        
         if is_rb3(self.shell):
-            returnval = self.action.get_state()
+            returnval = self._current_state
         else:
             returnval = self.action.get_active()
 
         return returnval
+
     def associate_menuitem(self, menuitem):
         ''' 
         links a menu with the action
         
         '''
         if is_rb3(self.shell):
-            print self.action.get_name()
             menuitem.set_detailed_action('win.'+self.action.get_name())
         else:
             menuitem.set_related_action(self.action)
