@@ -688,7 +688,7 @@ class Action(object):
         if self._do_update_state:
             self._current_state = not self._current_state
         
-        self._connect_func(self._connect_args)
+        self._connect_func(action, None, self._connect_args)
         
     @property
     def label(self):
