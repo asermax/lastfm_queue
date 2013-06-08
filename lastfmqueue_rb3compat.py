@@ -426,9 +426,6 @@ class ActionGroup(object):
                                                GLib.Variant('b', False))
             else:
                 action = Gio.SimpleAction.new(action_name, None)
-            
-            act = Action(self.shell, action)
-            #action.connect('activate', func, args)
 
             action_type = 'win'
             if 'action_type' in args:
@@ -455,7 +452,6 @@ class ActionGroup(object):
                     name=action_name,
                    tooltip='', stock_id=Gtk.STOCK_CLEAR)
                    
-            #action.connect('activate', func, None, args)
             if accel:
                 self.actiongroup.add_action_with_accel(action, accel)
             else:
