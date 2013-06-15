@@ -23,54 +23,10 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA.
 
 from gi.repository import Gtk
-from urlparse import urlparse as rb2urlparse
-
 import rb
-import httplib
-import urllib
 
 from lastfm_queue_compat import BaseAction, BaseActionGroup,\
     BaseApplicationShell, BaseMenu
-
-
-def responses():
-    return httplib.responses
-
-
-def unicodestr(param, charset):
-    return unicode(param, charset)
-
-
-def unicodeencode(param, charset):
-    return unicode(param).encode(charset)
-
-
-def urlparse(uri):
-    return rb2urlparse(uri)
-
-
-def url2pathname(url):
-    return urllib.url2pathname(url)
-
-
-def urlopen(filename):
-    return urllib.urlopen(filename)
-
-
-def pathname2url(filename):
-    return urllib.pathname2url(filename)
-
-
-def unquote(uri):
-    return urllib.unquote(uri)
-
-
-def quote(uri, safe=None):
-    return urllib.quote(uri, safe=safe)
-
-
-def quote_plus(uri):
-    return urllib.quote_plus(uri)
 
 
 class Menu(BaseMenu):
