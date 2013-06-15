@@ -142,6 +142,15 @@ class BaseAction(object):
         self.label = label
         self.accel = accel
 
+    def connect(self, address, func, args):
+        self._connect_func = func
+        self._connect_args = args
+
+        if address == 'activate':
+            func = self._activate
+
+        self._connect(address, func, args)
+
 
 def init(shell):
     if hasattr(shell.props.window, 'add_action'):
