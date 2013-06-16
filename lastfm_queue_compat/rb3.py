@@ -190,9 +190,11 @@ class ActionGroup(BaseActionGroup):
             self.actiongroup.add_action(action)
 
         if accel:
-            app.add_accelerator(accel, action_type + "." + action_name, None)
+            app.add_accelerator(accel, action_type + '.' + action_name, None)
 
-        return Action(self.shell, action, label, accel)
+        act = Action(self.shell, action, label, accel)
+
+        return act
 
 
 class ApplicationShell(BaseApplicationShell):
@@ -243,7 +245,7 @@ class ApplicationShell(BaseApplicationShell):
           'tools' or 'view'
         '''
         root = ET.fromstring(ui_string)
-        for elem in root.findall(".//menuitem"):
+        for elem in root.findall('.//menuitem'):
             action_name = elem.attrib['action']
 
             group = self._action_groups[group_name]
@@ -252,7 +254,10 @@ class ApplicationShell(BaseApplicationShell):
             item = Gio.MenuItem()
             item.set_detailed_action('app.' + action_name)
             item.set_label(act.label)
-            item.set_attribute_value("accel", GLib.Variant("s", act.accel))
+
+            if act.accel:
+                item.set_attribute_value(
+                    'accel', GLib.Variant.new_string(act.accel))
             app = Gio.Application.get_default()
             index = menu + action_name
             app.add_plugin_menu_item(menu,
@@ -275,7 +280,7 @@ class ApplicationShell(BaseApplicationShell):
         :param group_name: `str` unique name of the ActionGroup to add menu items to
         '''
         root = ET.fromstring(ui_string)
-        for elem in root.findall("./popup"):
+        for elem in root.findall('./popup'):
             popup_name = elem.attrib['name']
 
             menuelem = elem.find('.//menuitem')
@@ -298,7 +303,7 @@ class ApplicationShell(BaseApplicationShell):
             elif popup_name == 'PodcastViewPopup':
                 plugin_type = 'podcast-episode-popup'
             else:
-                print "unknown type %s" % plugin_type
+                print 'unknown type %s' % plugin_type
 
             index = plugin_type + action_name
             app.add_plugin_menu_item(plugin_type, index, item)
@@ -317,9 +322,20 @@ class Action(BaseAction):
     '''
     class that wraps around either a Gio.Action or a Gtk.Action
     '''
+    def __init__(self, shell, action, *args, **kwargs):
+        super(Action, self).__init__(shell, action, *args, **kwargs)
+        action.connect('activate', self._toggle)
 
     def _connect(self, address, func, args):
         self.action.connect(address, func, args)
+
+    def _toggle(self, *args):
+        ''' Internal hook to allow the action to be toggeable. '''
+        self._change_state(not self.get_active())
+
+    def _change_state(self, value):
+        ''' Changes the underlying action state. '''
+        self.action.change_state(GLib.Variant.new_boolean(value))
 
     def get_sensitive(self):
         '''
@@ -341,7 +357,8 @@ class Action(BaseAction):
 
         :param value: `boolean` state value
         '''
-        self.action.change_state(GLib.Variant.new_boolean(value))
+        self._change_state(not value)
+        self.activate()
 
     def get_active(self):
         '''

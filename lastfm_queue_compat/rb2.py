@@ -195,8 +195,9 @@ class ActionGroup(BaseActionGroup):
         else:
             self.actiongroup.add_action(action)
 
-        return Action(self.shell, action, label, accel)
+        act = Action(self.shell, action, label, accel)
 
+        return act
 
 class ApplicationShell(BaseApplicationShell):
     '''

@@ -18,14 +18,14 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA.
 
 from gi.repository import GObject, Gio, Peas, RB, GLib
-
-from lastfmqueue_rb3compat import ActionGroup
-#~ from lastfmqueue_rb3compat import Action
-from lastfmqueue_rb3compat import ApplicationShell
-
+import lastfm_queue_compat as compat
 import rb
-import urllib
 import random
+
+try:
+    from urllib import parse
+except:
+    import urllib as parse
 from xml.dom import minidom
 
 import gettext
@@ -50,23 +50,29 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
 
     def __init__(self):
         GObject.Object.__init__(self)
+
+        # init the pluggins settings backend
         self.settings = Gio.Settings.new(PATH)
 
     def do_activate(self):
         self.shell = self.object
 
-        self.action_group = ActionGroup(self.shell, 'LastFMQueueActionGroup')
+        # init the compat module
+        compat.init(self.shell)
+
+        self.action_group = compat.ActionGroup(
+            self.shell, 'LastFMQueueActionGroup')
         self.action = self.action_group.add_action(
-            func=self.toggle_dynamic,
-            action_name='LastFMQueueAction',
+            self.toggle_dynamic,
+            'LastFMQueueAction',
             label='LastFM Queue',
             action_type='app',
-            action_state=ActionGroup.TOGGLE)
+            action_state=compat.BaseActionGroup.TOGGLE)
 
         # load saved state
         self.action.set_active(self.settings[ACTIVE_KEY])
 
-        self._appshell = ApplicationShell(self.shell)
+        self._appshell = compat.ApplicationShell(self.shell)
         self._appshell.insert_action_group(self.action_group)
         self._appshell.add_app_menuitems(ui_str, 'LastFMQueueActionGroup')
 
@@ -132,9 +138,10 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
         self.past_entries.append((artist, title))
         loader = rb.Loader()
         url = 'http://ws.audioscrobbler.com/2.0/?method=track.getsimilar' \
-            '&artist=%s&track=%s&api_key=4353df7956417de92999306424bc9395' % \
-            (urllib.quote(artist.encode('utf-8')),
-            urllib.quote(title.encode('utf-8')))
+            '&api_key=4353df7956417de92999306424bc9395' \
+            '&artist={0}&track={1}'.format(
+                parse.quote(artist.encode('utf-8')),
+                parse.quote(title.encode('utf-8')))
 
         loader.get_url(url, self.load_list)
 

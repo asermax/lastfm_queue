@@ -22,7 +22,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA.
 
-import sys
+import inspect
 
 
 class BaseMenu(object):
@@ -87,21 +87,6 @@ class BaseActionGroup(object):
         :param action_name: `str` is the Action unique name
         '''
         return self._actions[action_name]
-
-    def add_action_with_accel(self, func, action_name, accel, **args):
-        '''
-        Creates an Action with an accelerator and adds it to the ActionGroup
-
-        :param func: function callback used when user activates the action
-        :param action_name: `str` unique name to associate with an action
-        :param accel: `str` accelerator
-        :param args: dict of arguments - this is passed to the function callback
-
-        Notes:
-        see notes for add_action
-        '''
-        args['accel'] = accel
-        return self.add_action(func, action_name, **args)
 
     def add_action(self, callback, action_name, label=None, accel=None,
                    action_type=None, action_state=None):
@@ -173,13 +158,7 @@ class BaseAction(object):
         self.label = label
         self.accel = accel
 
-    def connect(self, address, func, args):
-        self._connect_func = func
-        self._connect_args = args
-
-        if address == 'activate':
-            func = self._activate
-
+    def connect(self, address, func, args=None):
         self._connect(address, func, args)
 
 
@@ -189,4 +168,5 @@ def init(shell):
     else:
         import lastfm_queue_compat.rb2 as compat_module
 
-    sys.modules[__name__] = compat_module
+    for name, obj in inspect.getmembers(compat_module):
+        globals()[name] = obj
