@@ -41,7 +41,6 @@ class Menu(BaseMenu):
         :param action: `Action`  to associate with the menu item
         '''
         label = action.label
-
         item = Gtk.MenuItem(label=label)
         action.associate_menuitem(item)
         self._rbmenu_items[label] = item
@@ -151,10 +150,6 @@ class ActionGroup(BaseActionGroup):
     container for all Actions used to associate with menu items
     '''
 
-    # action_state
-    STANDARD = 0
-    TOGGLE = 1
-
     def __init__(self, shell, group_name):
         '''
         constructor
@@ -167,8 +162,8 @@ class ActionGroup(BaseActionGroup):
         uim = self.shell.props.ui_manager
         uim.insert_action_group(self.actiongroup)
 
-    def add_action(self, callback, action_name, label=None, accel=None,
-                   action_type=None, action_state=None):
+    def _build_action(self, callback, action_name, label, accel, action_type,
+                      action_state):
         '''
         Creates an Action and adds it to the ActionGroup
 
@@ -182,12 +177,6 @@ class ActionGroup(BaseActionGroup):
             ("win" or "app") by default it assumes all actions are "win" type
         key value of "action_state" determines what action state to create
         '''
-        if not label:
-            label = action_name
-
-        if not action_state:
-            action_state = ActionGroup.STANDARD
-
         if action_state == ActionGroup.TOGGLE:
             action = Gtk.ToggleAction(
                 label=label,
@@ -206,12 +195,7 @@ class ActionGroup(BaseActionGroup):
         else:
             self.actiongroup.add_action(action)
 
-        act = Action(self.shell, action, label, accel)
-        act.connect('activate', callback)
-
-        self._actions[action_name] = act
-
-        return act
+        return Action(self.shell, action, label, accel)
 
 
 class ApplicationShell(BaseApplicationShell):
@@ -219,6 +203,10 @@ class ApplicationShell(BaseApplicationShell):
     Unique class that mirrors RB.Application & RB.Shell menu functionality
     '''
     """ Implementation of the singleton interface """
+
+    def __init__(self, shell):
+        super(ApplicationShell, self).__init__(shell)
+        self._uids = []
 
     def lookup_action(self, action_group_name, action_name, action_type='app'):
         '''
@@ -323,8 +311,6 @@ class Action(BaseAction):
     def set_active(self, value):
         '''
         activate or deactivate a stateful action signal
-        For consistency with earlier RB versions, this will fire the
-        activate signal for the action
 
         :param value: `boolean` state value
         '''

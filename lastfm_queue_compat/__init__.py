@@ -54,7 +54,6 @@ class BaseActionGroup(object):
     '''
     container for all Actions used to associate with menu items
     '''
-
     # action_state
     STANDARD = 0
     TOGGLE = 1
@@ -103,6 +102,38 @@ class BaseActionGroup(object):
         '''
         args['accel'] = accel
         return self.add_action(func, action_name, **args)
+
+    def add_action(self, callback, action_name, label=None, accel=None,
+                   action_type=None, action_state=None):
+        '''
+        Creates an Action and adds it to the ActionGroup
+
+        :param func: function callback used when user activates the action
+        :param action_name: `str` unique name to associate with an action
+        :param args: dict of arguments - this is passed to the function callback
+
+        Notes:
+        key value of "label" is the visual menu label to display
+        key value of "action_type" is the RB2.99 Gio.Action type
+            ("win" or "app") by default it assumes all actions are "win" type
+        key value of "action_state" determines what action state to create
+        '''
+        if not label:
+            label = action_name
+
+        if not action_state:
+            action_state = BaseActionGroup.STANDARD
+
+        if not action_type:
+            action_type = 'win'
+
+        act = self._build_action(
+            callback, action_name, label, accel, action_type, action_state)
+        act.connect('activate', callback)
+
+        self._actions[action_name] = act
+
+        return act
 
 
 class BaseApplicationShell(object):
