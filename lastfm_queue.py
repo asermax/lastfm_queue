@@ -17,7 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA.
 
-from gi.repository import GObject, Gio, Peas, RB, GLib
+from gi.repository import GObject, Gio, Peas, RB, GLib, Gtk
 import lastfm_queue_compat as compat
 import rb
 import random
@@ -54,27 +54,28 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
         # init the pluggins settings backend
         self.settings = Gio.Settings.new(PATH)
 
+        # load saved state
+        self.active = self.settings[ACTIVE_KEY]
+
     def do_activate(self):
         self.shell = self.object
 
         # init the compat module
         compat.init(self.shell)
 
-        self.action_group = compat.ActionGroup(
-            self.shell, 'LastFMQueueActionGroup')
-        self.action = self.action_group.add_action(
-            self.toggle_dynamic,
+        action = compat.ToggleAction(
             'LastFMQueueAction',
-            label='LastFM Queue',
-            action_type='app',
-            action_state=compat.BaseActionGroup.TOGGLE)
+            _('LastFM Queue'),
+            _("Toggle Last.fm recommendations"),
+            Gtk.STOCK_EXECUTE)
 
-        # load saved state
-        self.action.set_active(self.settings[ACTIVE_KEY])
+        action.set_active(self.active)
+        action.connect('activate', self.toggle_dynamic)
 
-        self._appshell = compat.ApplicationShell(self.shell)
-        self._appshell.insert_action_group(self.action_group)
-        self._appshell.add_app_menuitems(ui_str, 'LastFMQueueActionGroup')
+        self._appshell = compat.ApplicationShell(
+            self.shell, 'LastFMQueueActionGroup')
+        self._appshell.add_action(action)
+        self._appshell.add_app_menuitems(ui_str)
 
         self.db = self.shell.get_property('db')
 
@@ -96,8 +97,8 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
         sp.disconnect(self.pec_id)
         sp.disconnect(self.sc_id)
 
-    def toggle_dynamic(self, *args):
-        self.active = self.action.get_active()
+    def toggle_dynamic(self, action, *args):
+        self.active = action.get_active()
 
         self.settings[ACTIVE_KEY] = self.active
         self.past_entries = []

@@ -25,8 +25,7 @@
 from gi.repository import Gtk
 import rb
 
-from lastfm_queue_compat import BaseAction, BaseActionGroup,\
-    BaseApplicationShell, BaseMenu
+from lastfm_queue_compat import BaseMenu
 
 
 class Menu(BaseMenu):
@@ -145,189 +144,42 @@ class Menu(BaseMenu):
         item.set_sensitive(enable)
 
 
-class ActionGroup(BaseActionGroup):
-    '''
-    container for all Actions used to associate with menu items
-    '''
-
+class ApplicationShell(object):
     def __init__(self, shell, group_name):
-        '''
-        constructor
-        :param shell: `RBShell`
-        :param group_name: `str` unique name for the object to create
-        '''
-        super(ActionGroup, self).__init__(shell, group_name)
+        super(ApplicationShell, self).__init__()
 
-        self.actiongroup = Gtk.ActionGroup(group_name)
-        uim = self.shell.props.ui_manager
-        uim.insert_action_group(self.actiongroup)
+        self.uim = shell.props.ui_manager
 
-    def _build_action(self, callback, action_name, label, accel, action_type,
-                      action_state):
-        '''
-        Creates an Action and adds it to the ActionGroup
+        if not group_name:
+            raise ValueError('You must define a group_name')
 
-        :param func: function callback used when user activates the action
-        :param action_name: `str` unique name to associate with an action
-        :param args: dict of arguments - this is passed to the function callback
+        self.action_group = Gtk.ActionGroup(group_name)
+        self.uim.insert_action_group(self.action_group)
 
-        Notes:
-        key value of "label" is the visual menu label to display
-        key value of "action_type" is the RB2.99 Gio.Action type
-            ("win" or "app") by default it assumes all actions are "win" type
-        key value of "action_state" determines what action state to create
-        '''
-        if action_state == ActionGroup.TOGGLE:
-            action = Gtk.ToggleAction(
-                label=label,
-                name=action_name,
-                tooltip='',
-                stock_id=Gtk.STOCK_CLEAR)
-        else:
-            action = Gtk.Action(
-                label=label,
-                name=action_name,
-                tooltip='',
-                stock_id=Gtk.STOCK_CLEAR)
-
-        if accel:
-            self.actiongroup.add_action_with_accel(action, accel)
-        else:
-            self.actiongroup.add_action(action)
-
-        act = Action(self.shell, action, label, accel)
-
-        return act
-
-class ApplicationShell(BaseApplicationShell):
-    '''
-    Unique class that mirrors RB.Application & RB.Shell menu functionality
-    '''
-    """ Implementation of the singleton interface """
-
-    def __init__(self, shell):
-        super(ApplicationShell, self).__init__(shell)
         self._uids = []
 
-    def lookup_action(self, action_group_name, action_name, action_type='app'):
-        '''
-        looks up (finds) an action created by another plugin.  If found returns
-        an Action or None if no matching Action.
+    def lookup_action(self, action_name):
+        return self.action_group.get_action(action_name)
 
-        :param action_group_name: `str` is the Gtk.ActionGroup name (ignored for RB2.99+)
-        :param action_name: `str` unique name for the action to look for
-        :param action_type: `str` RB2.99+ action type ("win" or "app")
-        '''
+    def add_action(self, action):
+        self.action_group.add_action(action)
 
-        uim = self.shell.props.ui_manager
-        ui_actiongroups = uim.get_action_groups()
+    def remove_action(self, action_name):
+        self.action_group.remove(self.lookup_action(action_name))
 
-        actiongroup = None
-        for actiongroup in ui_actiongroups:
-            if actiongroup.get_name() == action_group_name:
-                break
+    def _add_menuitems(self, ui_string):
+        self._uids.append(self.uim.add_ui_from_string(ui_string))
+        self.uim.ensure_update()
 
-        action = None
-        if actiongroup:
-            action = actiongroup.get_action(action_name)
-
-        if action:
-            return Action(self.shell, action)
-        else:
-            return None
-
-    def add_app_menuitems(self, ui_string, group_name, menu='tools'):
-        '''
-        utility function to add application menu items.
-
-        For RB2.99 all application menu items are added to the "tools" section of the
-        application menu. All Actions are assumed to be of action_type "app".
-
-        For RB2.98 or less, it is added however the UI_MANAGER string
-        is defined.
-
-        :param ui_string: `str` is the Gtk UI definition.  There is not an
-        equivalent UI definition in RB2.99 but we can parse out menu items since
-        this string is in XML format
-
-        :param group_name: `str` unique name of the ActionGroup to add menu items to
-        :param menu: `str` RB2.99 menu section to add to - nominally either
-          'tools' or 'view'
-        '''
-        uim = self.shell.props.ui_manager
-        self._uids.append(uim.add_ui_from_string(ui_string))
-        uim.ensure_update()
-
-    def add_browser_menuitems(self, ui_string, group_name):
-        '''
-        utility function to add popup menu items to existing browser popups
-
-        For RB2.99 all menu items are are assumed to be of action_type "win".
-
-        For RB2.98 or less, it is added however the UI_MANAGER string
-        is defined.
-
-        :param ui_string: `str` is the Gtk UI definition.  There is not an
-        equivalent UI definition in RB2.99 but we can parse out menu items since
-        this string is in XML format
-
-        :param group_name: `str` unique name of the ActionGroup to add menu items to
-        '''
-        uim = self.shell.props.ui_manager
-        self._uids.append(uim.add_ui_from_string(ui_string))
-        uim.ensure_update()
+    def add_app_menuitems(self, ui_string):
+        self._add_menuitems(ui_string)
+        
+    def add_browser_menuitems(self, ui_string):
+        self._add_menuitems(ui_string)
 
     def cleanup(self):
-        '''
-        utility remove any menuitems created.
-        '''
-        uim = self.shell.props.ui_manager
         for uid in self._uids:
-            uim.remove_ui(uid)
-        uim.ensure_update()
+            self.uim.remove_ui(uid)
+        self.uim.ensure_update()
 
-
-class Action(BaseAction):
-    '''
-    class that wraps around either a Gio.Action or a Gtk.Action
-    '''
-
-    def _connect(self, address, func, args):
-        self.action.connect(address, func, None, args)
-
-    def get_sensitive(self):
-        '''
-        get the sensitivity (enabled/disabled) state of the Action
-
-        returns boolean
-        '''
-        return self.action.get_sensitive()
-
-    def activate(self):
-        '''
-        invokes the activate signal for the action
-        '''
-        self.action.activate()
-
-    def set_active(self, value):
-        '''
-        activate or deactivate a stateful action signal
-
-        :param value: `boolean` state value
-        '''
-        self.action.set_active(value)
-
-    def get_active(self):
-        '''
-        get the state of the action
-
-        returns `boolean` state value
-        '''
-        return self.action.get_active()
-
-    def associate_menuitem(self, menuitem):
-        '''
-        links a menu with the action
-
-        '''
-        menuitem.set_related_action(self.action)
+ToggleAction = Gtk.ToggleAction
