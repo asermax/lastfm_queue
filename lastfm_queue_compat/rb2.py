@@ -164,6 +164,9 @@ class ApplicationShell(object):
     def add_action(self, action):
         self.action_group.add_action(action)
 
+    def add_action_with_accel(self, action, accel):
+        self.action_group.add_action(action, accel)
+
     def remove_action(self, action_name):
         self.action_group.remove(self.lookup_action(action_name))
 
@@ -182,4 +185,6 @@ class ApplicationShell(object):
             self.uim.remove_ui(uid)
         self.uim.ensure_update()
 
+
+Action = Gtk.Action
 ToggleAction = Gtk.ToggleAction
