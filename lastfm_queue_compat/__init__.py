@@ -25,31 +25,6 @@
 import inspect
 
 
-class BaseMenu(object):
-    '''
-    Menu object used to create window popup menus
-    '''
-
-    def __init__(self, plugin, shell):
-        '''
-        Initializes the menu.
-        '''
-        self.plugin = plugin
-        self.shell = shell
-        self._unique_num = 0
-
-        self._rbmenu_items = {}
-
-    def add_menu_item(self, menubar, section_name, action):
-        '''
-        add a new menu item to the popup
-        :param menubar: `str` is the name GtkMenu (or ignored for RB2.99+)
-        :param section_name: `str` is the name of the section to add the item to (RB2.99+)
-        :param action: `Action`  to associate with the menu item
-        '''
-        return self.insert_menu_item(menubar, section_name, -1, action)
-
-
 def init(shell):
     if hasattr(shell.props.window, 'add_action'):
         import lastfm_queue_compat.rb3 as compat_module
