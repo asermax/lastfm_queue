@@ -17,15 +17,15 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA.
 
-from gi.repository import GObject, Gio, Peas, RB, GLib
-
-from lastfmqueue_rb3compat import ActionGroup
-#~ from lastfmqueue_rb3compat import Action
-from lastfmqueue_rb3compat import ApplicationShell
-
+from gi.repository import GObject, Gio, Peas, RB, GLib, Gtk
+import lastfm_queue_compat as compat
 import rb
-import urllib
 import random
+
+try:
+    from urllib import parse
+except:
+    import urllib as parse
 from xml.dom import minidom
 
 import gettext
@@ -50,25 +50,32 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
 
     def __init__(self):
         GObject.Object.__init__(self)
+
+        # init the pluggins settings backend
         self.settings = Gio.Settings.new(PATH)
+
+        # load saved state
+        self.active = self.settings[ACTIVE_KEY]
 
     def do_activate(self):
         self.shell = self.object
 
-        self.action_group = ActionGroup(self.shell, 'LastFMQueueActionGroup')
-        self.action = self.action_group.add_action(
-            func=self.toggle_dynamic,
-            action_name='LastFMQueueAction',
-            label='LastFM Queue',
-            action_type='app',
-            action_state=ActionGroup.TOGGLE)
+        # init the compat module
+        compat.init(self.shell)
 
-        # load saved state
-        self.action.set_active(self.settings[ACTIVE_KEY])
+        action = compat.ToggleAction(
+            'LastFMQueueAction',
+            _('LastFM Queue'),
+            _("Toggle Last.fm recommendations"),
+            Gtk.STOCK_EXECUTE)
 
-        self._appshell = ApplicationShell(self.shell)
-        self._appshell.insert_action_group(self.action_group)
-        self._appshell.add_app_menuitems(ui_str, 'LastFMQueueActionGroup')
+        action.set_active(self.active)
+        action.connect('activate', self.toggle_dynamic)
+
+        self._appshell = compat.ApplicationShell(
+            self.shell, 'LastFMQueueActionGroup')
+        self._appshell.add_action(action)
+        self._appshell.add_app_menuitems(ui_str)
 
         self.db = self.shell.get_property('db')
 
@@ -90,8 +97,8 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
         sp.disconnect(self.pec_id)
         sp.disconnect(self.sc_id)
 
-    def toggle_dynamic(self, *args):
-        self.active = self.action.get_active()
+    def toggle_dynamic(self, action, *args):
+        self.active = action.get_active()
 
         self.settings[ACTIVE_KEY] = self.active
         self.past_entries = []
@@ -132,9 +139,10 @@ class LastFmQueuePlugin (GObject.Object, Peas.Activatable):
         self.past_entries.append((artist, title))
         loader = rb.Loader()
         url = 'http://ws.audioscrobbler.com/2.0/?method=track.getsimilar' \
-            '&artist=%s&track=%s&api_key=4353df7956417de92999306424bc9395' % \
-            (urllib.quote(artist.encode('utf-8')),
-            urllib.quote(title.encode('utf-8')))
+            '&api_key=4353df7956417de92999306424bc9395' \
+            '&artist={0}&track={1}'.format(
+                parse.quote(artist.encode('utf-8')),
+                parse.quote(title.encode('utf-8')))
 
         loader.get_url(url, self.load_list)
 
