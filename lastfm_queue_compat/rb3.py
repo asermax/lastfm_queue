@@ -42,7 +42,7 @@ class ApplicationShell(object):
         self._items = {}
 
     def _get_action_name(self, action):
-        return '{0}.{1}'.format(action.name, self.ACTION_PREFIX)
+        return '{0}.{1}'.format(self.ACTION_PREFIX, action.get_name())
 
     def lookup_action(self, action_name):
         return self.app.lookup_action(action_name)
@@ -108,7 +108,7 @@ class Action(Gio.SimpleAction):
     label = GObject.property(type=str, default='')
 
     def __init__(self, name, label, *args):
-        super(ToggleAction, self).__init__(
+        super(Action, self).__init__(
             name=name,
             label=label,
             parameter_type=None,
@@ -118,7 +118,7 @@ class Action(Gio.SimpleAction):
         return self.action.get_enabled()
 
 
-class ToggleAction(Gio.SimpleAction):
+class ToggleAction(Action):
     def __init__(self, name, label, *args):
         super(ToggleAction, self).__init__(name, label, *args)
 
