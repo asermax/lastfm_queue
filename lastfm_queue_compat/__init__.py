@@ -27,9 +27,9 @@ import inspect
 
 def init(shell):
     if hasattr(shell.props.window, 'add_action'):
-        import lastfm_queue_compat.rb3 as compat_module
+        from . import rb3 as compat_module
     else:
-        import lastfm_queue_compat.rb2 as compat_module
+        from . import rb2 as compat_module
 
     for name, obj in inspect.getmembers(compat_module):
         globals()[name] = obj
