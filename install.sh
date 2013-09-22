@@ -63,7 +63,7 @@ sudo glib-compile-schemas "$GLIB_DIR"
 if [[ $LOCAL == true ]]
 then
     echo "Installing plugin locally"
-    PLUGIN_PATH="/home/${USER}/.local/share/rhythmbox/plugins/lastfm_queue/"
+    PLUGIN_PATH="${HOME}/.local/share/rhythmbox/plugins/lastfm_queue/"
     
     #build the dirs
     mkdir -p $PLUGIN_PATH
